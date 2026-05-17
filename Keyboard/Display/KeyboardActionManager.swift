@@ -145,6 +145,10 @@ final class KeyboardActionManager: UserActionManager, @unchecked Sendable {
 
     @MainActor private func shiftStateOff(variableStates: VariableStates) {
         variableStates.boolStates[VariableStates.BoolStates.isShiftedKey] = false
+        if let previousLanguage = variableStates.languageBeforeShift {
+            variableStates.keyboardLanguage = previousLanguage
+            variableStates.languageBeforeShift = nil
+        }
     }
 
     @MainActor private func doAction(_ action: ActionType, requireSetResult: Bool = true, variableStates: VariableStates) {
@@ -304,13 +308,52 @@ final class KeyboardActionManager: UserActionManager, @unchecked Sendable {
             delegate?.openApp(scheme: scheme)
 
         case let .setBoolState(key, operation):
+            let isShiftKey = key == VariableStates.BoolStates.isShiftedKey
+            let isCapsLockKey = key == VariableStates.BoolStates.isCapsLockedKey
+
             switch operation {
             case .on:
                 variableStates.boolStates[key] = true
+                if isShiftKey {
+                    variableStates.languageBeforeShift = variableStates.keyboardLanguage
+                    if variableStates.keyboardLanguage == .ja_JP {
+                        variableStates.keyboardLanguage = .en_US
+                    }
+                } else if isCapsLockKey {
+                    variableStates.languageBeforeShift = variableStates.keyboardLanguage
+                    if variableStates.keyboardLanguage == .ja_JP {
+                        variableStates.keyboardLanguage = .en_US
+                    }
+                }
             case .off:
                 variableStates.boolStates[key] = false
+                if (isShiftKey || isCapsLockKey), let previousLanguage = variableStates.languageBeforeShift {
+                    variableStates.keyboardLanguage = previousLanguage
+                    variableStates.languageBeforeShift = nil
+                }
             case .toggle:
                 variableStates.boolStates[key]?.toggle()
+                if isShiftKey {
+                    if variableStates.boolStates.isShifted {
+                        variableStates.languageBeforeShift = variableStates.keyboardLanguage
+                        if variableStates.keyboardLanguage == .ja_JP {
+                            variableStates.keyboardLanguage = .en_US
+                        }
+                    } else if let previousLanguage = variableStates.languageBeforeShift {
+                        variableStates.keyboardLanguage = previousLanguage
+                        variableStates.languageBeforeShift = nil
+                    }
+                } else if isCapsLockKey {
+                    if variableStates.boolStates.isCapsLocked {
+                        variableStates.languageBeforeShift = variableStates.keyboardLanguage
+                        if variableStates.keyboardLanguage == .ja_JP {
+                            variableStates.keyboardLanguage = .en_US
+                        }
+                    } else if let previousLanguage = variableStates.languageBeforeShift {
+                        variableStates.keyboardLanguage = previousLanguage
+                        variableStates.languageBeforeShift = nil
+                    }
+                }
             }
         case let .boolSwitch(compiledExpression, trueAction, falseAction):
             if let condition = variableStates.boolStates.evaluateExpression(compiledExpression) {

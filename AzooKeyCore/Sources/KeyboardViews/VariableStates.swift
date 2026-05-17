@@ -122,6 +122,7 @@ public final class VariableStates: ObservableObject {
     @Published public var clipboardHistoryManager: ClipboardHistoryManager
 
     @Published public var keyboardLanguage: KeyboardLanguage = .ja_JP
+    @MainActor private(set) public var languageBeforeShift: KeyboardLanguage?
     @Published private(set) public var keyboardOrientation: KeyboardOrientation = .vertical
 
     @MainActor private(set) public var keyboardType: UIKeyboardType = .default
