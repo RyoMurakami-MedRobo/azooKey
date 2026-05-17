@@ -145,10 +145,6 @@ final class KeyboardActionManager: UserActionManager, @unchecked Sendable {
 
     @MainActor private func shiftStateOff(variableStates: VariableStates) {
         variableStates.boolStates[VariableStates.BoolStates.isShiftedKey] = false
-        if let previousLanguage = variableStates.languageBeforeShift {
-            variableStates.keyboardLanguage = previousLanguage
-            variableStates.languageBeforeShift = nil
-        }
     }
 
     @MainActor private func doAction(_ action: ActionType, requireSetResult: Bool = true, variableStates: VariableStates) {
@@ -182,7 +178,9 @@ final class KeyboardActionManager: UserActionManager, @unchecked Sendable {
             } else {
                 self.inputManager.input(text: input, requireSetResult: requireSetResult, simpleInsert: simpleInsert, inputStyle: variableStates.inputStyle)
             }
-            self.shiftStateOff(variableStates: variableStates)
+            if variableStates.boolStates.isShifted {
+                self.shiftStateOff(variableStates: variableStates)
+            }
         case let .insertMainDisplay(text):
             self.inputManager.insertMainDisplayText(text)
             self.shiftStateOff(variableStates: variableStates)
